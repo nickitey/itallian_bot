@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16.1-alpine
+    container_name: miscuzi_db
+    env_file:
+      - .env
+#    ports:
+#      - "${POSTGRES_PORT_EXT}:${POSTGRES_PORT}"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER} && psql -U $${POSTGRES_USER} -d $${POSTGRES_DB} -c 'SELECT 1'" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - shared-network
+
+  miscuzi:
+    container_name: miscuzi
+    build: .
+    command: [ "python", "main.py" ]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - shared-network
+
+volumes:
+  db-data:
+
+networks:
+  shared-network:
